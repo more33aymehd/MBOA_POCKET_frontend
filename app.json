@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "Mboapocket",
+    "slug": "mboapocket",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F1F17"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.mboapocket.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Mboapocket utilise la caméra pour scanner les codes marchands.",
+        "NSLocationWhenInUseUsageDescription": "Mboapocket utilise votre position pour afficher les bons plans à proximité."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1B8A5A"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.mboapocket.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Mboapocket utilise la caméra pour scanner les codes marchands."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Mboapocket utilise votre position pour afficher les bons plans à proximité."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#1B8A5A",
+          "sounds": []
+        }
+      ]
+    ]
+  }
+}
