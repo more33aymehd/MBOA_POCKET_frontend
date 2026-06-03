@@ -19,6 +19,10 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
+  // 2FA
+  const [step, setStep] = useState('login'); // 'login' | '2fa'
+  const [tempToken, setTempToken] = useState('');
+  const [code, setCode] = useState('');
 
   async function handleLogin() {
     if (!email.trim() || !password) {
@@ -28,10 +32,30 @@ export default function LoginScreen({ navigation }) {
     try {
       setLoading(true);
       const res = await authService.login(email.trim(), password);
+      if (res.requiresTwoFactor) {
+        setTempToken(res.tempToken);
+        setStep('2fa');
+      }
+    } catch (e) {
+      Alert.alert('Erreur', e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerify2fa() {
+    if (code.length !== 6) {
+      Alert.alert('Code invalide', 'Entrez le code à 6 chiffres reçu par email.');
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await authService.verify2fa(tempToken, code);
       await login(res.token, { id: res.userId, nom: res.nom, email: res.email });
       navigation.replace('MainTabs');
     } catch (e) {
-      Alert.alert('Erreur', e.message);
+      Alert.alert('Code incorrect', e.message);
+      setCode('');
     } finally {
       setLoading(false);
     }
@@ -113,6 +137,46 @@ export default function LoginScreen({ navigation }) {
       </View>
     </View>
   );
+
+  if (step === '2fa') {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.card }]} edges={['top', 'bottom', 'left', 'right']}>
+        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <ScrollView contentContainerStyle={styles.portraitScroll} keyboardShouldPersistTaps="handled">
+            <View style={styles.branding}>
+              <View style={styles.logoBox}><Text style={styles.logoLetter}>M</Text></View>
+              <Text style={styles.appName}>Mboapocket</Text>
+            </View>
+            <View style={styles.form}>
+              <Text style={styles.title}>Vérification</Text>
+              <Text style={[styles.twoFaSubtitle, { color: Colors.textSecondary }]}>
+                Un code à 6 chiffres a été envoyé à{'\n'}<Text style={{ color: Colors.primary, fontWeight: '600' }}>{email}</Text>
+              </Text>
+              <View style={styles.field}>
+                <Text style={styles.label}>Code de vérification</Text>
+                <TextInput
+                  style={[styles.input, styles.codeInput]}
+                  value={code}
+                  onChangeText={v => setCode(v.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="000000"
+                  placeholderTextColor={Colors.textSecondary}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  autoFocus
+                />
+              </View>
+              <TouchableOpacity style={[styles.btn, loading && { opacity: 0.7 }]} onPress={handleVerify2fa} disabled={loading}>
+                {loading ? <ActivityIndicator color={Colors.white} /> : <Text style={styles.btnLabel}>Vérifier</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setStep('login'); setCode(''); }} style={{ alignItems: 'center', marginTop: 8 }}>
+                <Text style={{ color: Colors.textSecondary, fontSize: 14 }}>← Retour à la connexion</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.card }]} edges={['top', 'bottom', 'left', 'right']}>
@@ -215,4 +279,6 @@ const styles = StyleSheet.create({
   registerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 8 },
   registerText: { fontSize: 14, color: Colors.textSecondary },
   registerLink: { fontSize: 14, color: Colors.primary, fontWeight: '600' },
+  twoFaSubtitle: { fontSize: 14, textAlign: 'center', lineHeight: 22, marginTop: -8 },
+  codeInput: { textAlign: 'center', fontSize: 28, fontWeight: '700', letterSpacing: 12 },
 });
