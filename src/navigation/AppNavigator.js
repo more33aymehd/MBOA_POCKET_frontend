@@ -37,6 +37,7 @@ import BonsPlansScreen from '../screens/deals/BonsPlansScreen';
 import DealDetailScreen from '../screens/deals/DealDetailScreen';
 import BilanMensuelScreen from '../screens/stats/BilanMensuelScreen';
 import NotificationsScreen from '../screens/notifications/NotificationsScreen';
+import PaymentHistoryScreen from '../screens/payment/PaymentHistoryScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -135,6 +136,7 @@ export default function AppNavigator() {
         <Stack.Screen name="DealDetail" component={DealDetailScreen} />
         <Stack.Screen name="BilanMensuel" component={BilanMensuelScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="PaymentHistory" component={PaymentHistoryScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

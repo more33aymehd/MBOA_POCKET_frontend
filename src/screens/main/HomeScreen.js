@@ -10,6 +10,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { budgetService } from '../../services/budgetService';
 import { categoryService } from '../../services/categoryService';
 import { expenseService } from '../../services/expenseService';
+import { paymentService } from '../../services/paymentService';
 import { notificationService } from '../../services/notificationService';
 import { formatFCFA, nomMois } from '../../utils/format';
 import { useFocusEffect } from '@react-navigation/native';
@@ -40,6 +41,7 @@ export default function HomeScreen({ navigation }) {
   const [budget, setBudget] = useState(null);
   const [categories, setCategories] = useState([]);
   const [recentExpenses, setRecentExpenses] = useState([]);
+  const [recentPayments, setRecentPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -49,17 +51,19 @@ export default function HomeScreen({ navigation }) {
   const load = useCallback(async () => {
     if (!token) return;
     try {
-      const [bud, cats, exps, notifStats] = await Promise.all([
+      const [bud, cats, exps, notifStats, pays] = await Promise.all([
         budgetService.getCurrent(token),
         categoryService.getAll(token),
         expenseService.getByMonth(token, now.getMonth() + 1, now.getFullYear()),
         notificationService.getUnreadCount(token).catch(() => ({ nonLues: 0 })),
+        paymentService.getHistory(token).catch(() => []),
       ]);
       setBudget(bud);
       setCategories(cats ?? []);
       setUnreadCount(notifStats?.nonLues ?? 0);
       const sorted = (exps ?? []).sort((a, b) => new Date(b.date) - new Date(a.date));
       setRecentExpenses(sorted.slice(0, 5));
+      setRecentPayments((pays ?? []).slice(0, 3));
     } catch { } finally {
       setLoading(false);
       setRefreshing(false);
@@ -208,6 +212,43 @@ export default function HomeScreen({ navigation }) {
             </View>
           )}
         </View>
+
+        {/* Derniers paiements */}
+        {recentPayments.length > 0 && (
+          <View style={s.section}>
+            <View style={s.sectionHeader}>
+              <Text style={[s.sectionTitle, { color: colors.text }]}>Derniers paiements</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('PaymentHistory')}>
+                <Text style={s.seeAll}>Voir tout</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={[s.activityCard, { backgroundColor: colors.card }]}>
+              {recentPayments.map((p, i) => {
+                const METHOD_ICONS = { ORANGE_MONEY: '🟠', MTN_MOMO: '🟡', CASH: '💵', MOCK: '🧪' };
+                const STATUT_COLORS = { SUCCESSFUL: Colors.success, PENDING: Colors.warning, FAILED: Colors.danger };
+                const STATUT_LABELS = { SUCCESSFUL: 'Réussi', PENDING: 'En attente', FAILED: 'Échoué' };
+                return (
+                  <View key={p.id ?? i} style={[s.activityRow, i < recentPayments.length - 1 && [s.activityBorder, { borderBottomColor: colors.borderLight }]]}>
+                    <View style={[s.activityIconBg, { backgroundColor: colors.accent ?? Colors.accent }]}>
+                      <Text style={s.activityEmoji}>{METHOD_ICONS[p.methode] ?? '💳'}</Text>
+                    </View>
+                    <View style={s.activityMeta}>
+                      <Text style={[s.activityDesc, { color: colors.text }]} numberOfLines={1}>
+                        {p.merchantName || 'Paiement'}
+                      </Text>
+                      <Text style={[s.activitySub, { color: STATUT_COLORS[p.statut] ?? colors.textSecondary }]}>
+                        {STATUT_LABELS[p.statut] ?? p.statut}
+                      </Text>
+                    </View>
+                    <Text style={[s.activityAmount, { color: p.statut === 'FAILED' ? Colors.danger : colors.text }]}>
+                      -{formatFCFA(p.montant)}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         <View style={{ height: 32 }} />
       </ScrollView>
